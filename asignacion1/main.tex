@@ -1,0 +1,238 @@
+\documentclass[11pt, fuzz]{article}
+
+%----------------  Retrieving all the packages-----------------%
+\usepackage[english]{babel} %change language 
+\usepackage[T1]{fontenc}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage[colorlinks=true,urlcolor=blue,linkcolor=black,citecolor=black]{hyperref}
+\usepackage{fuzz}
+
+\newcommand{\mono}[1]{{\ttfamily #1}}
+\newcommand{\equwref}[1]{(\ref{#1})}
+
+
+%---------------------- Hader -------------------------------%
+\fancyhead[L]{Guillermo Cornejo Suárez \\ 2017239404}
+\fancyhead[R]{Ingeniería de Software\\ Asignacion 1}
+\fancyfoot[C]{\thepage}	 
+\pagestyle{fancy}
+\setlength{\headheight}{26pt}
+
+               
+
+%---------------------- Title --------------------------------%
+\title{		
+		\usefont{OT1}{bch}{b}{n}
+        \Large \textsc{Tecnológico de Costa Rica} \\
+		\normalsize \textsc{Maestría en computación} \\ 
+		\normalsize \textsc{Ingeniería de Software} \\ [25pt]		
+		\Huge Assignment 1 \\	
+}
+\author{
+		\normalfont \Large   Guillermo Cornejo Suárez \\ 		
+        \large		 		 2017239404 \\ 		        
+}
+
+
+\begin{document}
+
+\maketitle
+
+This assignment consist on developing a formal description for the Library Management System (LMS) explained in the reference book. A Library in composed of \emph{Book}s and a group of \emph{Person}s. 
+
+
+\begin{zed}
+    [Book, Person]
+\end{zed}
+
+The Library's books can be divided in books on shelves and books on loan. The system also requires a record of which person has a lent book. 
+
+
+\begin{schema}{Library}
+    on\_loan, on\_shelves, books: \power Book \\
+    borrowers: \power Person                 \\
+    lent\_to: Book \pfun Person              \\
+\where
+    on\_loan = \dom lent\_to                 \\
+    \ran lent\_to \subset borrowers          \\
+    books = on\_loan \cup on\_shelves        \\
+    on\_loan \cap on\_shelves = \emptyset    
+\end{schema}
+
+The LMS is initialized as follows:
+
+\begin{schema}{Init\_library}
+    Library'
+\where
+    books' = \emptyset      \\
+    borrowers' = \emptyset
+\end{schema}
+
+The type \emph{LMSResponse} defines the system responses. 
+
+\begin{zed}
+    LMSResponse ::= add\_book\_ok               \\
+                  | add\_book\_already\_in      \\
+                  | add\_borrower\_ok           \\
+                  | add\_borrower\_already\_in  \\
+                  | delete\_book\_ok            \\
+                  | delete\_book\_not\_in       \\
+                  | delete\_book\_on\_loan      \\
+                  | delete\_borrower\_ok        \\
+                  | delete\_borrower\_not\_in   \\
+                  | delete\_borrower\_on\_loan  \\
+                  | lend\_ok                    \\
+                  | lend\_borrower\_not\_in     \\
+                  | lend\_book\_not\_in         \\
+                  | lend\_book\_on\_loan        \\
+\end{zed}
+
+
+The following schemas define the operations over the LMS. 
+
+\section{Add a new book}
+
+\begin{schema}{Add\_book\_ok}
+    \Delta Library  \\
+    b?: Book        \\
+    r!: LMSResponse 
+\where
+    b? \notin books                      \\
+    on\_shelves' = on\_shelves \cup \{b?\} \\
+    r! = add\_book\_ok
+\end{schema}
+
+\begin{schema}{Add\_book\_already\_in}
+    \Xi Library     \\
+    b?: Book        \\
+    r!: LMSResponse
+\where
+    b? \in books                \\
+    r! = add\_book\_already\_in
+\end{schema}
+
+\begin{zed}
+    Add\_book \defs Add\_book\_ok \lor Add\_book\_already\_in
+\end{zed}
+
+
+\section{Add a Borrower}
+
+\begin{schema}{Add\_borrower\_ok}
+    \Delta Library  \\
+    b?: Person      \\
+    r!: LMSResponse
+\where
+    b? \notin borrowers                \\
+    borrowers' = borrowers \cup \{b?\} \\
+    r! = add\_borrower\_ok    
+\end{schema}
+
+\begin{schema}{Add\_borrower\_already\_in}
+    \Xi Library     \\
+    b?: Person      \\
+    r!: LMSResponse \\
+\where
+    b? \in borrowers                \\
+    r! = add\_borrower\_already\_in
+\end{schema}
+
+\begin{zed}
+    Add\_borrower \defs Add\_borrower\_ok \lor Add\_borrower\_already\_in
+\end{zed}
+
+\section{Delete a book}
+
+\begin{schema}{Delete\_book\_ok}
+    \Delta Library  \\
+    b?: Book        \\
+    r!: LMSResponse
+\where
+    b? \in books                                \\
+    b? \in on\_shelves                          \\
+    on\_shelves' = on\_shelves \setminus \{b?\} \\
+    r! = delete\_book\_ok
+\end{schema}
+
+\begin{schema}{Delete\_book\_not\_in}
+    \Xi Library     \\
+    b?: Book        \\
+    r!: LMSResponse
+\where
+    b? \notin books            \\
+    r! = delete\_book\_not\_in \\
+\end{schema}
+
+\begin{schema}{Delete\_book\_on\_loan}
+    \Xi Library     \\
+    b?: Book        \\
+    r!: LMSResponse
+\where
+    b? \in on\_loan             \\
+    r! = delete\_book\_on\_loan \\
+\end{schema}
+
+\begin{zed}
+    Delete\_book \defs Delete\_book\_ok \lor Delete\_book\_not\_in \lor Delete\_book\_on\_loan
+\end{zed}
+
+
+\section{Delete a borrower}
+
+
+\begin{schema}{Delete\_borrower\_ok}
+    \Delta Library  \\
+    b?: Person      \\
+    r!: LMSResponse \\
+\where
+    b? \in borrowers                        \\
+    b? \notin \ran lent\_to                 \\
+    borrowers' = borrowers \setminus \{b?\} \\
+    r! = delete\_borrower\_ok               \\
+\end{schema}
+
+\begin{schema}{Delete\_borrower\_not\_in}
+    \Xi Library     \\
+    b?: Person      \\
+    r!: LMSResponse \\
+\where
+    b? \notin borrowers            \\
+    r! = delete\_borrower\_not\_in \\
+\end{schema}
+
+\begin{schema}{Delete\_borrower\_on\_loan}
+    \Xi Library     \\
+    b?: Person      \\
+    r!: LMSResponse \\
+\where
+    b? \in borrowers                        \\
+    b? \in \ran lent\_to                    \\
+    r! = delete\_borrower\_on\_loan         \\
+\end{schema}
+
+\begin{zed}
+    Delete\_borrower \defs Delete\_borrower\_ok \lor Delete\_borrower\_not\_in \lor \\ Delete\_borrower\_on\_loan
+\end{zed}
+
+
+\section{Lend a book}
+
+\begin{schema}{Lend\_ok}
+
+\end{schema}
+
+
+
+
+
+\end{document}
+
+
+
+
