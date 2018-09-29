@@ -1,4 +1,5 @@
 # Latex stuff
+*.pdf
 *.aux
 *.glo
 *.idx

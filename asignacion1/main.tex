@@ -91,6 +91,9 @@ The type \emph{LMSResponse} defines the system responses.
                   | lend\_borrower\_not\_in     \\
                   | lend\_book\_not\_in         \\
                   | lend\_book\_on\_loan        \\
+                  | return\_book\_ok            \\
+                  | return\_book\_not\_in       \\
+                  | return\_book\_not\_loan     \\
 \end{zed}
 
 
@@ -223,11 +226,133 @@ The following schemas define the operations over the LMS.
 
 \section{Lend a book}
 
-\begin{schema}{Lend\_ok}
 
+\begin{schema}{Lend\_ok}
+    \Delta Library  \\
+    b?: Book        \\
+    p?: Person      \\
+    r!: LMSResponse \\
+\where
+    b? \in on\_shelves                          \\
+    p? \in borrowers                            \\
+    lent\_to' = \{b? \mapsto p?\} \cup lent\_to \\
+    r! = lend\_ok                               \\
+\end{schema}
+
+\begin{schema}{Lend\_borrower\_not\_in}
+    \Xi Library  \\
+    b?: Book        \\
+    p?: Person      \\
+    r!: LMSResponse \\
+\where
+    p? \notin borrowers          \\
+    r! = lend\_borrower\_not\_in \\
+\end{schema}
+
+\begin{schema}{Lend\_book\_not\_in}
+    \Xi Library  \\
+    b?: Book        \\
+    p?: Person      \\
+    r!: LMSResponse \\
+\where
+    b? \notin books          \\
+    r! = lend\_book\_not\_in \\
+\end{schema}
+
+\begin{schema}{Lend\_book\_on\_loan}
+    \Xi Library  \\
+    b?: Book        \\
+    p?: Person      \\
+    r!: LMSResponse \\
+\where
+    b? \in on\_loan          \\
+    r! = lend\_book\_on\_loan \\
 \end{schema}
 
 
+\begin{zed}
+    Lend\_book \defs Lend\_ok \lor Lend\_borrower\_not\_in \lor Lend\_book\_not\_in \lor \\ Lend\_book\_on\_loan
+\end{zed}
+
+\section{Return a book}
+
+
+\begin{schema}{Return\_book\_ok}
+    \Delta Library  \\
+    b?: Book        \\
+    r!: LMSResponse \\
+\where
+    b? \in on\_loan                        \\
+    on\_loan' = on\_loan \setminus \{b?\}  \\
+    lent\_to' = \{b?\} \ndres lent\_to     \\
+    on\_shelves' = on\_shelves \cup \{b?\} \\
+    r! = return\_book\_ok                   \\
+\end{schema}
+
+\begin{schema}{Return\_book\_not\_in}
+    \Xi Library     \\
+    b?: Book        \\
+    r!: LMSResponse \\
+\where
+    b? \notin books                        \\
+    r! = return\_book\_not\_in              \\
+\end{schema}
+
+\begin{schema}{Return\_book\_not\_loan}
+    \Xi Library     \\
+    b?: Book        \\
+    r!: LMSResponse \\
+\where
+    b? \notin on\_loan          \\
+    r! = return\_book\_not\_loan \\
+\end{schema}
+
+\begin{zed}
+    Return\_book \defs Return\_book\_ok \lor Return\_book\_not\_in \lor \\ Return\_book\_not\_loan
+\end{zed}
+
+
+\section{Adding the Titles extension}
+
+\begin{zed}
+    [Title]
+\end{zed}
+
+\begin{schema}{Titles\_of\_books}
+    books: \power Book          \\
+    titles: \power Title        \\
+    title\_of: Book \pfun Title 
+\where
+    books = \dom title\_of \\
+    titles = \ran title\_of \\
+\end{schema}
+
+\begin{zed}
+    Library\_phase2 \defs Library \land Titles\_of\_books
+\end{zed}
+
+
+\section{Add book with title}
+
+\begin{schema}{Add\_book\_to\_titles\_ok}
+    \Delta Titles\_of\_books \\
+    b?: Book                 \\
+    t?: Title                \\
+\where
+    b? \notin books                             \\
+    title\_of' = title\_of \cup \{b? \mapsto t?\} \\
+\end{schema}
+
+\begin{zed}
+    Add\_book\_ok\_p2 \defs Add\_book\_ok \land Add\_book\_to\_titles\_ok
+\also
+    Add\_book\_already\_in\_p2 \defs Add\_book\_already\_in \land \Xi Titles\_of\_books
+\also
+    Add\_book\_p2 \defs Add\_book\_ok\_p2 \lor Add\_book\_already\_in\_p2 
+\end{zed}
+
+
+\section{Enquire about a book}
 
 
 
