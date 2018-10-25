@@ -1,0 +1,93 @@
+\documentclass[11pt, fuzz]{article}
+
+%----------------  Retrieving all the packages-----------------%
+\usepackage[english]{babel} %change language 
+\usepackage[T1]{fontenc}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage[colorlinks=true,urlcolor=blue,linkcolor=black,citecolor=black]{hyperref}
+\usepackage{fuzz}
+
+\newcommand{\mono}[1]{{\ttfamily #1}}
+\newcommand{\equwref}[1]{(\ref{#1})}
+
+
+%---------------------- Hader -------------------------------%
+\fancyhead[L]{Guillermo Cornejo Suárez \\ 2017239404}
+\fancyhead[R]{Ingeniería de Software\\ Proyecto Final}
+\fancyfoot[C]{\thepage}	 
+\pagestyle{fancy}
+\setlength{\headheight}{26pt}
+
+               
+
+%---------------------- Title --------------------------------%
+\title{		
+		\usefont{OT1}{bch}{b}{n}
+        \Large \textsc{Tecnológico de Costa Rica} \\
+		\normalsize \textsc{Maestría en computación} \\ 
+		\normalsize \textsc{Ingeniería de Software} \\ [25pt]		
+		\Huge A formal description of Exploding Kittens \\	
+}
+\author{
+		\normalfont \Large   Guillermo Cornejo Suárez \\ 		
+        \large		 		 2017239404 \\ 		        
+}
+
+
+\begin{document}
+
+\maketitle
+
+Exploding Kittens is a card game for people who are into kittens, explosions, lasers beams and sometimes goats. The game set consists of 2 up to 5 players and 56 cards. 
+
+The basic game mechanics is very similar to a Russian roulette. According to the rules booklet, the players take turns drawing a card from the deck until someone draws and Exploding Kitten. When that happens, that person explodes, they are now dead and out of the game. This process continues until there's only one player left, who survives and wins the game. 
+
+There are special cards that a player can strategically use to avoid an Exploding Kitten card or to increase other player's probability of drawing an Exploding Kitten. A player's turn ends when she draws a card from the deck. Before ending her turn, the player can play as many cards as she wants. The Deck consist of the following cards: 
+
+\begin{itemize}
+    \item Defuse (6 cards): If you drew an Exploding Kitten, you can play this card instead of exploding. Place the Defuse card in the Discard Pile and secretly and without reorder, insert the Exploding Kitten into the Draw Pile anywhere you'd like. 
+    \item Nope (5 cards): stop any action played by another user except for an Exploding Kitten of a Defuse card. It's possible to play a Nope card over another Nope. A Nope card can be played at any moment, it's not required for the player to be in his turn. 
+    \item Exploding Kitten (4 cards): You must show this card immediately. Unless you posses a Defuse card, you're dead. Discard all of your cards, including the Exploding Kitten. 
+    \item Attack (4 cards): End your turn (or turns) without drawing and force the next player to take 2 turns in a row. 
+    \item Skip (4 cards): End your turn without drawing a card. 
+    \item Favor (4 cards): Force another player to give you one card of their choose from their hand. 
+    \item Shuffle (4 cards): Shuffle the Draw Pile without viewing the cards.
+    \item See The Future (5 cards): Peek at the top three cards from the Draw Pile and put them back in the same order. 
+    \item No action cards (4 of each):
+        \begin{itemize}
+            \item Tacocat (please note that this is a palindrome)
+            \item Cattermelon
+            \item Hairy Potato Cat
+            \item Rainbow-ralphing Cat
+            \item Beard Cat
+        \end{itemize}
+\end{itemize}
+
+Also, it's possible to play card combos:
+
+\begin{itemize}
+    \item Two of a kind: allows you to pick a random card from other player's hand. 
+    \item Three of a kind: Similar to Two of a kind but are allowed to name the card you want. If the other player doesn't have it, you get nothing. 
+    \item Five Different Cards: You can take any card you'd like from the Discard Pile. 
+\end{itemize}
+
+The game setup consists of the following steps:
+
+\begin{enumerate}
+    \item Remove all the Exploding Kittens and Defuse Cards from the deck. 
+    \item Shuffle the remaining deck and deal four cards face down to each player.
+    \item Deal one defuse card to each player. 
+    \item Insert enough Exploding Kittens back into the deck to kill every player except one. 
+    \item Insert the remaining Defuse Cards into the deck. 
+    \item Shuffle the deck and put it face down in the center. This is the Draw Pile. 
+    \item Pick a player to go first and a direction for the turns. 
+\end{enumerate}
+
+\end{document}
+
