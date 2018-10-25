@@ -94,12 +94,22 @@ The type \emph{LMSResponse} defines the system responses.
                   | return\_book\_ok            \\
                   | return\_book\_not\_in       \\
                   | return\_book\_not\_loan     \\
+                  | enquire\_in                 \\
+                  | enquire\_not\_in            \\
+                  | enquire\_on\_loan           \\
+                  | delete\_book\_reserved      \\
+                  | lend\_book\_reserved        \\
+                  | reserve\_title\_not\_in     \\
+                  | reserve\_title\_not\_borrower     \\
+                  | reserve\_title\_ok          \\
 \end{zed}
 
 
 The following schemas define the operations over the LMS. 
 
 \section{Add a new book}
+
+To add a new book to the library, it must not be in the library. 
 
 \begin{schema}{Add\_book\_ok}
     \Delta Library  \\
@@ -127,6 +137,8 @@ The following schemas define the operations over the LMS.
 
 \section{Add a Borrower}
 
+Similar to adding a new book, the new borrower must not be in the library system. 
+
 \begin{schema}{Add\_borrower\_ok}
     \Delta Library  \\
     b?: Person      \\
@@ -151,6 +163,8 @@ The following schemas define the operations over the LMS.
 \end{zed}
 
 \section{Delete a book}
+
+To delete a book, the library must own the book and it be on the shelfs.
 
 \begin{schema}{Delete\_book\_ok}
     \Delta Library  \\
@@ -188,6 +202,7 @@ The following schemas define the operations over the LMS.
 
 \section{Delete a borrower}
 
+To delete a borrower, it must be in the borrowers list and she must not have a lend book from the library. 
 
 \begin{schema}{Delete\_borrower\_ok}
     \Delta Library  \\
@@ -226,6 +241,7 @@ The following schemas define the operations over the LMS.
 
 \section{Lend a book}
 
+To lend a book, it must be on the shelfs and the person must be on the list of borrowers. 
 
 \begin{schema}{Lend\_ok}
     \Delta Library  \\
@@ -276,6 +292,7 @@ The following schemas define the operations over the LMS.
 
 \section{Return a book}
 
+To return a book, it must be on the list of loan books
 
 \begin{schema}{Return\_book\_ok}
     \Delta Library  \\
@@ -314,6 +331,8 @@ The following schemas define the operations over the LMS.
 
 \section{Adding the Titles extension}
 
+This extension creates an abstractions for titles, i.e. the information relative to a book, like author and press, but preserving independence from the physical book. The physical book is already represented by the Book abstraction. 
+
 \begin{zed}
     [Title]
 \end{zed}
@@ -334,7 +353,10 @@ The following schemas define the operations over the LMS.
 
 \section{Add book with title}
 
+To add a new title, similar to adding a new book, it must not be registered in the system. Also, every title must be associated with a physical book within the library. 
+
 \begin{schema}{Add\_book\_to\_titles\_ok}
+    \Xi Library              \\
     \Delta Titles\_of\_books \\
     b?: Book                 \\
     t?: Title                \\
@@ -354,10 +376,173 @@ The following schemas define the operations over the LMS.
 
 \section{Enquire about a book}
 
+A borrower can retrieve the title's information by giving the system a book. Hence, the user can know if the title is owned by the library and, if so, if it's on the shelves or on loan. 
 
+\begin{schema}{Enquire\_in}
+    \Xi Library\_phase2  \\
+    b?: Book              \\
+    r!: LMSResponse       \\
+\where
+    b? \in on\_shelves    \\
+    r! = enquire\_in      \\
+\end{schema}
+
+\begin{schema}{Enquire\_not\_in}
+    \Xi Library\_phase2  \\
+    b?: Book              \\
+    r!: LMSResponse       \\
+\where
+    b? \notin books       \\
+    r! = enquire\_not\_in \\
+\end{schema}
+
+\begin{schema}{Enquire\_on\_loan}
+    \Xi Library\_phase2  \\
+    b?: Book              \\
+    r!: LMSResponse       \\
+\where
+    b? \in on\_loan       \\
+    r! = enquire\_on\_loan\\
+\end{schema}
+
+\begin{zed}
+    Enquire\_book \defs Enquire\_in \land Enquire\_not\_in \land Enquire\_on\_loan
+\end{zed}
+
+
+\section{Reservations}
+
+A borrower can reserve a book owned by the library. By doing so, no other borrower will be able to take the book on loan before her. 
+
+\begin{schema}{Reservation}
+    Library\_phase2                        \\
+    reservation: Title \pfun \iseq Person
+\where
+    \dom reservation \subseteq titles  \\
+    \bigcup \{t: \dom reservation @ \ran(reservation(t))\} \subseteq borrowers
+\end{schema}
+
+\begin{zed}
+Library\_phase3 \defs Library\_phase2 \land Reservation
+\end{zed}
+
+\section{Delete a book with reservation}
+
+To delete a book, considering the new reservation abstraction, the system must first check if a borrower had reserved it. 
+
+\begin{schema}{Delete\_book\_reserv\_reserved}
+    \Xi Library\_phase3 \\
+    b?: Book            \\
+    r!: LMSResponse
+\where
+    title\_of(b?) \in \dom reservation \\
+    r! = delete\_book\_reserved
+\end{schema}
+
+\begin{zed}
+    Delete\_book\_p3 \defs Delete\_book \lor Delete\_book\_reserv\_reserved
+\end{zed}
+
+\section{Delete Borrower with reservation}
+
+To delete a borrower, considering the new reservation abstraction, the system must remove the borrower from all the reservation lists. 
+
+\begin{schema}{Delete\_borrower\_reservation}
+    \Delta Library\_phase3 \\
+    b?: Person             \\
+    r!: LMSResponse 
+\where
+    reservation = (\lambda title:Title | title \in \dom reservation @ reservation(title) \filter \{b?\}) 
+\end{schema}
+
+
+\begin{zed}
+Delete\_borrower\_p3 \defs (Delete\_borrower\_ok \land Delete\_borrower\_reservation) \\ \lor Delete\_borrower\_not\_in \lor Delete\_borrower\_on\_loan
+\end{zed}
+
+
+\section{Lend a book with reservation}
+
+To lend a book, considering the new reservation abstraction, the system must check if the borrower requesting the book is the fist on the reservation queue. 
+
+\begin{schema}{Lend\_book\_reserved}
+    \Xi Library\_phase3 \\
+    b?: Book            \\
+    p?: Person          \\
+    r!: LMSResponse     \\
+\where
+    reservation(title\_of(b?)) \neq \emptyset \\
+    p? \neq head~(reservation(title\_of(b?))) \\
+    r! = lend\_book\_reserved
+\end{schema}    
+
+\begin{schema}{Lend\_book\_reserved\_ok}
+    \Delta Library\_phase3 \\
+    b?: Book               \\
+    p?: Person             \\
+    r!: LMSResponse        \\
+\where    
+    reservation(title\_of(b?)) = \emptyset \lor p? = head~(reservation(title\_of(b?))) \\
+    reservation' = reservation \oplus \{(title\_of(b?)) \mapsto (tail~(reservation(title\_of(b?))))\} \\
+    Lend\_ok               
+\end{schema}
+
+\begin{zed}
+Lend\_book\_reservation \defs Lend\_borrower\_not\_in \lor \\ Lend\_book\_not\_in \lor Lend\_book\_on\_loan \lor Lend\_book\_reserved \lor \\ Lend\_book\_reserved\_ok
+\end{zed}
+
+\section{Reserve a title}
+
+To reserve a title, the title must be owned by the library and the borrower must not have reserved the title previously. 
+
+\begin{schema}{Reserve\_title\_not\_in}
+    \Xi Library\_phase3 \\
+    t?: Title           \\
+    p?: Person          \\
+    r!: LMSResponse     \\
+\where
+    t? \notin titles \\
+    r! = reserve\_title\_not\_in \\
+\end{schema}
+
+\begin{schema}{Reserve\_title\_not\_borrower}
+    \Xi Library\_phase3 \\
+    t?: Title           \\
+    p?: Person          \\
+    r!: LMSResponse     \\
+\where
+    p? \notin borrowers                \\
+    r! = reserve\_title\_not\_borrower
+\end{schema}
+
+\begin{schema}{Reserve\_title\_already\_reserved}
+    \Xi Library\_phase3 \\
+    t?: Title           \\
+    p?: Person          \\
+    r!: LMSResponse     \\
+\where
+    p? \in \ran(reservation(t?))    \\
+    r! = reserve\_title\_not\_borrower
+\end{schema}
+
+\begin{schema}{Reserve\_title\_ok}
+    \Delta Library\_phase3 \\
+    t?: Title              \\
+    p?: Person             \\
+    r!: LMSResponse        \\
+\where    
+    p? \in borrowers                \\
+    t? \in titles                   \\  
+    p? \notin \ran(reservation(t?))  \\
+
+    reservation' = reservation \oplus \{t? \mapsto (reservation(t?) \cat \langle p? \rangle)\} \\
+    r! = reserve\_title\_ok
+\end{schema}
+
+
+\begin{zed}
+Reserve\_title \defs Reserve\_title\_not\_in \lor Reserve\_title\_not\_borrower \\ \lor Reserve\_title\_already\_reserved \lor Reserve\_title\_ok 
+\end{zed}
 
 \end{document}
-
-
-
 
