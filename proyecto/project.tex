@@ -44,6 +44,8 @@
 
 \maketitle
 
+\section{Overview}
+
 Exploding Kittens is a card game for people who are into kittens, explosions, lasers beams and sometimes goats. The game set consists of 2 up to 5 players and 56 cards. 
 
 The basic game mechanics is very similar to a Russian roulette. According to the rules booklet, the players take turns drawing a card from the deck until someone draws and Exploding Kitten. When that happens, that person explodes, they are now dead and out of the game. This process continues until there's only one player left, who survives and wins the game. 
@@ -88,6 +90,127 @@ The game setup consists of the following steps:
     \item Shuffle the deck and put it face down in the center. This is the Draw Pile. 
     \item Pick a player to go first and a direction for the turns. 
 \end{enumerate}
+
+
+\section{Mathematical toolkit}
+
+This function transforms a sequence of bags (of cards) into a bag of cards that contains all the elements of the bags in the sequence. 
+
+\begin{gendef}[C]
+    sec\_bag\_union: \seq (\bag C) \fun \bag C\\
+\where
+    \forall SB: \seq (\bag C) @ sec\_bag\_union~SB = \\
+    \IF SB = \emptyset \THEN \lbag~\rbag\\
+    \ELSE head~SB \uplus (sec\_bag\_union~(tail~SB))
+\end{gendef}
+
+This function sums the number of elements in a bag. 
+
+\begin{gendef}[C]
+    sum\_units\_bag: \bag C \fun \nat\\
+    sum\_units: \seq C \fun \nat\\
+\where
+    \forall B: \bag C; items: \seq C | \ran items = \dom B\\
+    @ (sum\_units\_bag~B = sum\_units~items \land\\
+    sum\_units~items = \IF items = \emptyset \THEN 0\\
+    \ELSE B \bcount (head~items) + (sum\_units~(tail~items)))
+\end{gendef}
+
+
+%\begin{gendef}[C]
+%    insert: \seq C \fun 
+%\end{gendef}
+
+\section{The cards}
+
+The $card$ type can take the following values:
+
+\begin{zed}
+    Card ::= Defuse | Nope | Exploding | Attack | Skip | Favor \\| Shuffle | Future | Tacocat | Cattermelon | Hairy | Rainbow | Beard
+\end{zed}
+
+The deck has 56 $cards$, in the following proportions:
+
+\begin{schema}{Deck}
+    deck: \bag Card
+\where
+    deck \bcount Defuse      = 6 \\
+    deck \bcount Nope        = 5 \\
+    deck \bcount Exploding   = 4 \\
+    deck \bcount Attack      = 4 \\
+    deck \bcount Skip        = 4 \\
+    deck \bcount Favor       = 4 \\
+    deck \bcount Shuffle     = 4 \\
+    deck \bcount Future      = 5 \\
+    deck \bcount Tacocat     = 4 \\
+    deck \bcount Cattermelon = 4 \\
+    deck \bcount Hairy       = 4 \\
+    deck \bcount Rainbow     = 4 \\
+    deck \bcount Beard       = 4 \\
+\end{schema}
+
+
+
+\section{The game}
+
+The whole game can be modelled as cards moving around the different piles and the players' hand. You have a Draw Pile, a Discard Pile and two up to five Hands. The most important invariant is that cards don't disappear during the game, i.e. the bag union of piles and hands equals the Deck. 
+
+\begin{zed}
+Hand == \bag Card \\
+Pile == \seq Card \\
+\end{zed}
+
+\begin{schema}{Game}
+    Deck \\
+    draw: Pile \\
+    discard: Pile \\
+    hands: \seq Hand\\
+    num\_players: \num \\
+\where
+    deck = (items~draw) \uplus (items~discard) \uplus (sec\_bag\_union~hands)\\
+    2 \leq num\_players \leq 5 \\
+    \# (\dom hands) = num\_players\\
+    (items~draw) \bcount Exploding = num\_players - 1
+\end{schema}
+
+
+
+\section{Game setup}
+
+\begin{schema}{GameSetup}
+    \Delta Game\\
+    set\_num\_players?: \num
+\where
+    2 \leq set\_num\_players? \leq 5 \\
+    num\_players' = set\_num\_players?\\
+    \forall h: Hand | h \in (\ran hands) @ h \bcount Defuse = 1 \land\\
+    sum\_units\_bag~h = 5 \\
+    (items~draw) \bcount Defuse = deck \bcount Defuse - set\_num\_players?\\
+    (items~discard) \bcount Exploding = deck \bcount Exploding - (set\_num\_players? - 1) \\
+\end{schema}
+
+\section{Playing a card}
+
+
+
+\section{Drawing a card}
+
+% Necesito definir ínsert
+\begin{schema}{DrawCard\_Explode\_Survive}
+    \Delta Game \\
+    h?:Hand \\
+    position?: \nat
+\where
+    h? = head~hands \\
+    head~draw = Exploding \\
+    Defuse \inbag h? \\
+    0 \leq position? \leq \#(draw)\\
+    hands' = (tail~hands) \cat \langle h? \uminus \lbag Defuse \rbag \rangle\\
+    discard' = \langle Defuse \rangle \cat discard \\
+\end{schema}
+
+% DrawCard-Explode-Die
+% DrawCard-Other
 
 \end{document}
 
