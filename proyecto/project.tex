@@ -100,8 +100,8 @@ This function transforms a sequence of bags (of cards) into a bag of cards that 
     sec\_bag\_union: \seq (\bag C) \fun \bag C\\
 \where
     \forall SB: \seq (\bag C) @ sec\_bag\_union~SB = \\
-    \IF SB = \emptyset \THEN \lbag~\rbag\\
-    \ELSE head~SB \uplus (sec\_bag\_union~(tail~SB))
+\t2    \IF SB = \emptyset \THEN \lbag~\rbag\\
+\t2    \ELSE head~SB \uplus (sec\_bag\_union~(tail~SB))
 \end{gendef}
 
 This function sums the number of elements in a bag. 
@@ -111,15 +111,24 @@ This function sums the number of elements in a bag.
     sum\_units: \seq C \fun \nat\\
 \where
     \forall B: \bag C; items: \seq C | \ran items = \dom B\\
-    @ (sum\_units\_bag~B = sum\_units~items \land\\
-    sum\_units~items = \IF items = \emptyset \THEN 0\\
-    \ELSE B \bcount (head~items) + (sum\_units~(tail~items)))
+    \t1 @ (sum\_units\_bag~B = sum\_units~items \land\\
+    \t2 sum\_units~items = \IF items = \emptyset \THEN 0\\
+    \t2 \ELSE B \bcount (head~items) + (sum\_units~(tail~items)))
 \end{gendef}
 
+This function defines the \emph{insertHead} operator, which takes a sequence and moves it's head to a give position in the sequences. 
 
-%\begin{gendef}[C]
-%    insert: \seq C \fun 
-%\end{gendef}
+\newcommand{\insertHead}{~insertHead~}
+%%inop \insertHead 3
+
+\begin{gendef}[C]
+    \_ \insertHead \_: \seq C \cross \nat \fun \seq C
+\where
+    \forall D: \seq C; n: \nat; A, B: \seq C | 0 < \#D \leq n\\
+    \t6 \land tail~D = A \cat B\\
+    \t6 \land \#B = \#D - n\\
+    \t2 @ (D \insertHead n) = A \cat \langle head~D \rangle \cat B
+\end{gendef}
 
 \section{The cards}
 
@@ -195,6 +204,10 @@ Pile == \seq Card \\
 
 \section{Drawing a card}
 
+The following schemas defines what happens when the players (represented by their respective hand) draw a card from the Draw Pile. 
+
+If they draw an Exploding Kitten but have in their hand a Defuse card, they can use it to avoid exploding. 
+
 % Necesito definir ínsert
 \begin{schema}{DrawCard\_Explode\_Survive}
     \Delta Game \\
@@ -204,13 +217,29 @@ Pile == \seq Card \\
     h? = head~hands \\
     head~draw = Exploding \\
     Defuse \inbag h? \\
-    0 \leq position? \leq \#(draw)\\
     hands' = (tail~hands) \cat \langle h? \uminus \lbag Defuse \rbag \rangle\\
     discard' = \langle Defuse \rangle \cat discard \\
+    draw' = draw \insertHead position? \\
+    num\_players' = num\_players
 \end{schema}
 
+
+Otherwise, if they don't have a Defuse card, they explode and are out of the game. 
+
 % DrawCard-Explode-Die
+
+
+
+
+
+
 % DrawCard-Other
+
+
+
+
+
+
 
 \end{document}
 
