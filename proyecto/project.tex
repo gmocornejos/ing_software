@@ -53,9 +53,9 @@ The basic game mechanics is very similar to a Russian roulette. According to the
 There are special cards that a player can strategically use to avoid an Exploding Kitten card or to increase other player's probability of drawing an Exploding Kitten. A player's turn ends when she draws a card from the deck. Before ending her turn, the player can play as many cards as she wants. The Deck consist of the following cards: 
 
 \begin{itemize}
-    \item Defuse (6 cards): If you drew an Exploding Kitten, you can play this card instead of exploding. Place the Defuse card in the Discard Pile and secretly and without reorder, insert the Exploding Kitten into the Draw Pile anywhere you'd like. 
-    \item Nope (5 cards): stop any action played by another user except for an Exploding Kitten of a Defuse card. It's possible to play a Nope card over another Nope. A Nope card can be played at any moment, it's not required for the player to be in his turn. 
     \item Exploding Kitten (4 cards): You must show this card immediately. Unless you posses a Defuse card, you're dead. Discard all of your cards, including the Exploding Kitten. 
+    \item Defuse (6 cards): If you drew an Exploding Kitten, you can play this card instead of exploding. Place the Defuse card in the Discard Pile and secretly and without reorder, insert the Exploding Kitten into the Draw Pile anywhere you'd like. 
+    \item Nope (5 cards): stop any action played by someone else, except for an Exploding Kitten of a Defuse card. It's possible to play a Nope card over another Nope. A Nope card can be played at any moment, it's not required for the player to be in his turn. 
     \item Attack (4 cards): End your turn (or turns) without drawing and force the next player to take 2 turns in a row. 
     \item Skip (4 cards): End your turn without drawing a card. 
     \item Favor (4 cards): Force another player to give you one card of their choose from their hand. 
@@ -138,7 +138,7 @@ The $card$ type can take the following values:
     Card ::= Defuse | Nope | Exploding | Attack | Skip | Favor \\| Shuffle | Future | Tacocat | Cattermelon | Hairy | Rainbow | Beard
 \end{zed}
 
-The deck has 56 $cards$, in the following proportions:
+The deck has 56 $cards$, in the following quantities:
 
 \begin{schema}{Deck}
     deck: \bag Card
@@ -182,9 +182,17 @@ Pile == \seq Card \\
     (items~draw) \bcount Exploding = num\_players - 1
 \end{schema}
 
+There are other three important invariants:
 
+\begin{enumerate}
+    \item The number of players lies between two and five. 
+    \item The number of hands equals the number of players. 
+    \item There are enough Exploding cards in the draw pile to kill every player except one. 
+\end{enumerate}
 
 \section{Game setup}
+
+This is a formal translation of the setup procedure presented in the overview. 
 
 \begin{schema}{GameSetup}
     \Delta Game\\
@@ -198,17 +206,14 @@ Pile == \seq Card \\
     (items~discard) \bcount Exploding = deck \bcount Exploding - (set\_num\_players? - 1) \\
 \end{schema}
 
-\section{Playing a card}
-
 
 
 \section{Drawing a card}
 
 The following schemas defines what happens when the players (represented by their respective hand) draw a card from the Draw Pile. 
 
-If they draw an Exploding Kitten but have in their hand a Defuse card, they can use it to avoid exploding. 
+If they draw an Exploding Kitten but have a Defuse card in their hand, they can use it to avoid exploding. 
 
-% Necesito definir ínsert
 \begin{schema}{DrawCard\_Explode\_Survive}
     \Delta Game \\
     h?:Hand \\
@@ -217,28 +222,180 @@ If they draw an Exploding Kitten but have in their hand a Defuse card, they can 
     h? = head~hands \\
     head~draw = Exploding \\
     Defuse \inbag h? \\
-    hands' = (tail~hands) \cat \langle h? \uminus \lbag Defuse \rbag \rangle\\
+    hands' = \IF h? = hands~1 \THEN tail~(tail~hands) \cat \langle h? \uminus \lbag Defuse \rbag \rangle \\ \t5 \ELSE tail~hands \cat \langle h? \uminus \lbag Defuse \rbag \rangle\\
     discard' = \langle Defuse \rangle \cat discard \\
     draw' = draw \insertHead position? \\
     num\_players' = num\_players
 \end{schema}
 
 
-Otherwise, if they don't have a Defuse card, they explode and are out of the game. 
+Otherwise, if they don't have a Defuse card, they explode and are out of the game. Their hand is removed from the hands sequence and added to the discard pile. 
 
-% DrawCard-Explode-Die
+\begin{schema}{DrawCard\_Explode\_Die}
+    \Delta Game \\
+    h?: Hand \\
+    s: \seq Card \\
+\where
+    h? = head~hands \\
+    h? = items~s \\
+    head~draw = Exploding \\
+    h? \bcount Defuse = 0 \\
+    hands' = \IF h? = hands~1 \THEN tail~(tail~hands) \ELSE tail~hands \\
+    discard' = s \cat \langle Exploding \rangle \cat discard \\
+    draw' = tail~draw \\
+    num\_players' = num\_players - 1
+\end{schema}
+
+If the player draws a card different from an Exploding, it's simply added to her hand. 
+
+\begin{schema}{DrawCard\_other}
+    \Delta Game \\
+    h?: Hand \\
+\where
+    h? = head~hands \\
+    head~draw \neq Exploding \\
+    draw' = tail~draw \\
+    discard' = discard \\
+    hands' = \IF h? = hands~1 \THEN \langle h? \uplus \lbag head~draw \rbag \rangle \cat tail~(tail~hands)\\ \t5 \ELSE tail~hands \cat \langle h? \uplus \lbag head~draw \rbag \rangle \\
+    num\_players' = num\_players
+\end{schema}
+
+\begin{zed}
+    DrawCard \defs DrawCard\_Explode\_Survive \lor DrawCard\_Explode\_Die\\ \t9 \lor DrawCard\_other 
+\end{zed}
+
+
+\section{Playing a card}
+
+\begin{schema}{Play\_Attack}
+    \Delta Game \\
+    h?: Hand \\
+    target: Hand \\
+\where
+    h? = head~hands \\
+    Attack \inbag h? \\
+    target = \IF h? = hands~1 \THEN hands~2 \ELSE hands~1\\
+    draw' = draw \\
+    discard' = \langle Attack \rangle \cat discard \\
+    hands' = \IF h? = hands~1 \THEN \langle target \rangle \cat tail~(tail~hands) \cat \langle h? \uminus \lbag Attack \rbag \rangle \\ \t5 \ELSE \langle target \rangle \cat tail~hands \cat \langle h? \uminus \lbag Attack \rbag \rangle  \\
+    num\_players' = num\_players
+\end{schema}
+
+\begin{schema}{Play\_Skip}
+    \Delta Game \\
+    h?: Hand \\
+\where
+    h? = head~hands \\
+    Skip \inbag h? \\
+    draw' = draw \\ 
+    discard' = \langle Skip \rangle \cat discard \\
+    hands' = \IF h? = hands~1 \THEN \langle h? \uminus \lbag Skip \rbag \rangle \cat tail~(tail~hands) \\ \t6 \ELSE tail~hands \cat \langle h? \uminus \lbag Skip \rbag \rangle \\
+    num\_players' = num\_players
+\end{schema}
+
+
+\begin{schema}{Play\_Favor}
+    \Delta Game \\
+    h?: Hand \\
+    target?: \nat \\
+    c?: Card \\
+\where
+    h? = head~hands \\
+    Favor \inbag h? \\
+    c? \inbag hands~target? \\
+    draw' = draw \\
+    discard' = \langle Favor \rangle \cat discard \\
+    hands' = hands \oplus \{0 \mapsto h? \uminus \lbag Favor \rbag \uplus \lbag c? \rbag, target? \mapsto (hands~target?) \uminus \lbag c? \rbag\} \\
+    num\_players' = num\_players 
+\end{schema}
+
+
+\begin{schema}{Play\_Shuffle}
+    \Delta Game \\
+    h?: Hand \\
+\where
+    h? = head~hands \\
+    Shuffle \inbag h? \\
+    draw' \neq draw \\
+    \#draw' = \#draw \\
+    discard' = \langle Shuffle \rangle \cat discard \\
+    hands' = \langle h? \uminus \lbag Shuffle \rbag \rangle \cat tail~hands \\
+    num\_players' = num\_players
+\end{schema}
+
+\begin{schema}{Play\_Future}
+    \Delta Game \\
+    h?: Hand \\
+\where
+    h? = head~hands \\
+    Future \inbag h? \\
+    draw' = draw \\
+    discard' = \langle Future \rangle \cat discard \\
+    hands' = \langle h? \uminus \lbag Future \rbag \rangle \cat tail~hands \\
+    num\_players' = num\_players
+\end{schema}
+
+\subsection{Combo cards}
+
+\begin{schema}{Play\_TwoOfaKind}
+    \Delta Game \\
+    h?: Hand \\
+    target?: \nat \\
+    played?: Card \\
+    given?: Card \\
+\where
+    h? = head~hands \\
+    h? \bcount played? \geq 2 \\
+    given? \inbag hands~target? \\
+    draw' = draw \\
+    discard' = \langle played?, played? \rangle \cat discard \\
+    hands' = hands \oplus \{0 \mapsto h? \uminus \lbag played?, played? \rbag \uplus \lbag given? \rbag, \\ \t5 target? \mapsto (hands~target?) \uminus \lbag given? \rbag \} \\
+    num\_players' = num\_players
+\end{schema}
+
+\begin{schema}{Play\_ThreeOfaKind\_lucky}
+    \Delta Game \\
+    h?: Hand \\
+    target?: \nat \\
+    played?: Card \\
+    given?: Card \\
+\where
+    h? = head~hands \\
+    head~hands \bcount played? \geq 3 \\
+    given? \inbag hands~target? \\
+    draw' = draw \\
+    discard' = \langle played?, played?, played? \rangle \cat discard \\
+    hands' = hands \oplus \{ 0 \mapsto h? \uminus \lbag played?, played?, played? \rbag \uplus \lbag given? \rbag, \\ \t6 target? \mapsto (hands~target?) \uminus \lbag given? \rbag \} \\
+    num\_players' = num\_players 
+\end{schema}
+
+\begin{schema}{Play\_ThreeOfaKind\_unlucky}
+    \Delta Game \\
+    h?: Hand \\
+    target?: \nat \\
+    played?: Card \\
+    given?: Card \\
+\where
+    h? = head~hands \\
+    head~hands \bcount played? \geq 3 \\
+    (hands~target?) \bcount given? = 0 \\
+    draw' = draw \\
+    discard' = \langle played?, played?, played? \rangle \cat discard \\
+    hands' = hands \oplus \{ 0 \mapsto h? \uminus \lbag played?, played?, played? \rbag \} \\
+    num\_players' = num\_players
+\end{schema}
 
 
 
+\begin{schema}{Play\_FiveCards}
+    \Delta Game
+\end{schema}
 
+\subsection{Playing a Nope card}
 
-
-% DrawCard-Other
-
-
-
-
-
+\begin{schema}{Play\_Nope}
+    \Delta Game
+\end{schema}
 
 
 \end{document}
