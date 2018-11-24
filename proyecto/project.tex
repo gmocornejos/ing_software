@@ -12,6 +12,7 @@
 \usepackage{booktabs}
 \usepackage[colorlinks=true,urlcolor=blue,linkcolor=black,citecolor=black]{hyperref}
 \usepackage{fuzz}
+\usepackage{geometry}
 
 \newcommand{\mono}[1]{{\ttfamily #1}}
 \newcommand{\equwref}[1]{(\ref{#1})}
@@ -48,17 +49,17 @@
 
 Exploding Kittens is a card game for people who are into kittens, explosions, lasers beams and sometimes goats. The game set consists of 2 up to 5 players and 56 cards. 
 
-The basic game mechanics is very similar to a Russian roulette. According to the rules booklet, the players take turns drawing a card from the deck until someone draws and Exploding Kitten. When that happens, that person explodes, they are now dead and out of the game. This process continues until there's only one player left, who survives and wins the game. 
+The basic game mechanics is very similar to a Russian roulette. According to the rules booklet, the players take turns drawing a card from the deck until someone draws an Exploding Kitten. When that happens, that person explodes, they are now dead and out of the game. This process continues until there's only one player left, who survives and wins the game. 
 
-There are special cards that a player can strategically use to avoid an Exploding Kitten card or to increase other player's probability of drawing an Exploding Kitten. A player's turn ends when she draws a card from the deck. Before ending her turn, the player can play as many cards as she wants. The Deck consist of the following cards: 
+There are special cards that players can strategically use to avoid an Exploding Kitten card or to increase other player's probability of drawing an Exploding Kitten. A player's turn ends when she draws a card from the deck. Before ending her turn, the player can play as many cards as she wants. The Deck consist of the following cards: 
 
 \begin{itemize}
     \item Exploding Kitten (4 cards): You must show this card immediately. Unless you posses a Defuse card, you're dead. Discard all of your cards, including the Exploding Kitten. 
-    \item Defuse (6 cards): If you drew an Exploding Kitten, you can play this card instead of exploding. Place the Defuse card in the Discard Pile and secretly and without reorder, insert the Exploding Kitten into the Draw Pile anywhere you'd like. 
-    \item Nope (5 cards): stop any action played by someone else, except for an Exploding Kitten of a Defuse card. It's possible to play a Nope card over another Nope. A Nope card can be played at any moment, it's not required for the player to be in his turn. 
+    \item Defuse (6 cards): If you drew an Exploding Kitten, you can play this card instead of exploding. Place the Defuse card in the Discard Pile and secretly and without reordering, insert the Exploding Kitten into the Draw Pile anywhere you'd like. 
+    \item Nope (5 cards): stop any action played by someone else, except for an Exploding Kitten or a Defuse card. It's possible to play a Nope card over another Nope. A Nope card can be played at any moment, it's not required for the player to be in his turn. 
     \item Attack (4 cards): End your turn (or turns) without drawing and force the next player to take 2 turns in a row. 
     \item Skip (4 cards): End your turn without drawing a card. 
-    \item Favor (4 cards): Force another player to give you one card of their choose from their hand. 
+    \item Favor (4 cards): Force another player to give you one card of their choice from their hand. 
     \item Shuffle (4 cards): Shuffle the Draw Pile without viewing the cards.
     \item See The Future (5 cards): Peek at the top three cards from the Draw Pile and put them back in the same order. 
     \item No action cards (4 of each):
@@ -74,8 +75,8 @@ There are special cards that a player can strategically use to avoid an Explodin
 Also, it's possible to play card combos:
 
 \begin{itemize}
-    \item Two of a kind: allows you to pick a random card from other player's hand. 
-    \item Three of a kind: Similar to Two of a kind but are allowed to name the card you want. If the other player doesn't have it, you get nothing. 
+    \item Two of a kind: allows you to pick a random card from another player's hand. 
+    \item Three of a kind: Similar to Two of a kind but you're allowed to name the card you want. If the other player doesn't have it, you get nothing. 
     \item Five Different Cards: You can take any card you'd like from the Discard Pile. 
 \end{itemize}
 
@@ -110,13 +111,13 @@ This function sums the number of elements in a bag.
     sum\_units\_bag: \bag C \fun \nat\\
     sum\_units: \seq C \fun \nat\\
 \where
-    \forall B: \bag C; items: \seq C | \ran items = \dom B\\
-    \t1 @ (sum\_units\_bag~B = sum\_units~items \land\\
-    \t2 sum\_units~items = \IF items = \emptyset \THEN 0\\
-    \t2 \ELSE B \bcount (head~items) + (sum\_units~(tail~items)))
+    \forall B: \bag C; elem: \seq C | \ran elem = \dom B\\
+    \t1 @ (sum\_units\_bag~B = sum\_units~elem \land\\
+    \t2 sum\_units~elem = \IF elem = \emptyset \THEN 0\\
+    \t2 \ELSE B \bcount (head~elem) + (sum\_units~(tail~elem)))
 \end{gendef}
 
-This function defines the \emph{insertHead} operator, which takes a sequence and moves it's head to a give position in the sequences. 
+This function defines the \emph{insertHead} operator, which takes a sequence and moves its head to a given position in the sequences. 
 
 \newcommand{\insertHead}{~insertHead~}
 %%inop \insertHead 3
@@ -192,14 +193,21 @@ There are other three important invariants:
 
 \section{Game setup}
 
-This is a formal translation of the setup procedure presented in the overview. 
+This is a formal translation of the setup procedure presented in the overview:
+
+\begin{itemize}
+    \item There are 2 up to 5 players. 
+    \item Every player starts the game with one Defuse card. The remaining Defuse card are inserted in the Draw Pile. 
+    \item Every player starts the game with four random cards. 
+    \item There are enough Exploding card in the Draw pile to kill every player except one. The remaining Exploding cards are discarted. 
+\end{itemize}
 
 \begin{schema}{GameSetup}
-    \Delta Game\\
+    Game \\
     set\_num\_players?: \num
 \where
     2 \leq set\_num\_players? \leq 5 \\
-    num\_players' = set\_num\_players?\\
+    num\_players = set\_num\_players?\\
     \forall h: Hand | h \in (\ran hands) @ h \bcount Defuse = 1 \land\\
     sum\_units\_bag~h = 5 \\
     (items~draw) \bcount Defuse = deck \bcount Defuse - set\_num\_players?\\
@@ -210,9 +218,9 @@ This is a formal translation of the setup procedure presented in the overview.
 
 \section{Drawing a card}
 
-The following schemas defines what happens when the players (represented by their respective hand) draw a card from the Draw Pile. 
+Drawing a card is the commong way to end a turn. The following schemes define what happens when the players (represented by their respective hand) draw a card from the Draw Pile. 
 
-If they draw an Exploding Kitten but have a Defuse card in their hand, they can use it to avoid exploding. 
+If they draw an Exploding Kitten but have a Defuse card in their hand, they can use it to avoid exploding. That is, the Defuse card in the player's hand is moved to the Discard pile and the Exploding card is inserted again into the Draw pile.
 
 \begin{schema}{DrawCard\_Explode\_Survive}
     \Delta Game \\
@@ -222,14 +230,14 @@ If they draw an Exploding Kitten but have a Defuse card in their hand, they can 
     h? = head~hands \\
     head~draw = Exploding \\
     Defuse \inbag h? \\
-    hands' = \IF h? = hands~1 \THEN tail~(tail~hands) \cat \langle h? \uminus \lbag Defuse \rbag \rangle \\ \t5 \ELSE tail~hands \cat \langle h? \uminus \lbag Defuse \rbag \rangle\\
+    hands' = \IF h? = hands~2 \THEN tail~(tail~hands) \cat \langle h? \uminus \lbag Defuse \rbag \rangle \\ \t5 \ELSE tail~hands \cat \langle h? \uminus \lbag Defuse \rbag \rangle\\
     discard' = \langle Defuse \rangle \cat discard \\
     draw' = draw \insertHead position? \\
     num\_players' = num\_players
 \end{schema}
 
 
-Otherwise, if they don't have a Defuse card, they explode and are out of the game. Their hand is removed from the hands sequence and added to the discard pile. 
+Otherwise, if they don't have a Defuse card, they explode and are out of the game. Their hand is removed from the hands sequence and added to the discard pile, including the Exploding card. 
 
 \begin{schema}{DrawCard\_Explode\_Die}
     \Delta Game \\
@@ -240,7 +248,7 @@ Otherwise, if they don't have a Defuse card, they explode and are out of the gam
     h? = items~s \\
     head~draw = Exploding \\
     h? \bcount Defuse = 0 \\
-    hands' = \IF h? = hands~1 \THEN tail~(tail~hands) \ELSE tail~hands \\
+    hands' = \IF h? = hands~2 \THEN tail~(tail~hands) \ELSE tail~hands \\
     discard' = s \cat \langle Exploding \rangle \cat discard \\
     draw' = tail~draw \\
     num\_players' = num\_players - 1
@@ -256,7 +264,7 @@ If the player draws a card different from an Exploding, it's simply added to her
     head~draw \neq Exploding \\
     draw' = tail~draw \\
     discard' = discard \\
-    hands' = \IF h? = hands~1 \THEN \langle h? \uplus \lbag head~draw \rbag \rangle \cat tail~(tail~hands)\\ \t5 \ELSE tail~hands \cat \langle h? \uplus \lbag head~draw \rbag \rangle \\
+    hands' = \IF h? = hands~2 \THEN \langle h? \uplus \lbag head~draw \rbag \rangle \cat tail~(tail~hands)\\ \t5 \ELSE tail~hands \cat \langle h? \uplus \lbag head~draw \rbag \rangle \\
     num\_players' = num\_players
 \end{schema}
 
@@ -267,6 +275,17 @@ If the player draws a card different from an Exploding, it's simply added to her
 
 \section{Playing a card}
 
+There are two general preconditions to play any card:
+
+\begin{itemize}
+    \item The player willingly to play is in his turn. That means that his hand is in the head of the hands sequence. 
+    \item The card is in the player's hand. 
+\end{itemize}
+
+Also, the general postcondition is that the played card is moved from the players's hand to the Discard pile. 
+
+When an Attack is played, the player ends his turn without drawing a card. The next player must then play two turns. If the player was under Attack, this card ends both turns.  
+
 \begin{schema}{Play\_Attack}
     \Delta Game \\
     h?: Hand \\
@@ -274,12 +293,14 @@ If the player draws a card different from an Exploding, it's simply added to her
 \where
     h? = head~hands \\
     Attack \inbag h? \\
-    target = \IF h? = hands~1 \THEN hands~2 \ELSE hands~1\\
+    target = \IF h? = hands~2 \THEN hands~3 \ELSE hands~2\\
     draw' = draw \\
     discard' = \langle Attack \rangle \cat discard \\
-    hands' = \IF h? = hands~1 \THEN \langle target \rangle \cat tail~(tail~hands) \cat \langle h? \uminus \lbag Attack \rbag \rangle \\ \t5 \ELSE \langle target \rangle \cat tail~hands \cat \langle h? \uminus \lbag Attack \rbag \rangle  \\
+    hands' = \IF h? = hands~2 \THEN \langle target \rangle \cat tail~(tail~hands) \cat \langle h? \uminus \lbag Attack \rbag \rangle \\ \t5 \ELSE \langle target \rangle \cat tail~hands \cat \langle h? \uminus \lbag Attack \rbag \rangle  \\
     num\_players' = num\_players
 \end{schema}
+
+To play an Skip has the effect of ending the turn. 
 
 \begin{schema}{Play\_Skip}
     \Delta Game \\
@@ -289,10 +310,11 @@ If the player draws a card different from an Exploding, it's simply added to her
     Skip \inbag h? \\
     draw' = draw \\ 
     discard' = \langle Skip \rangle \cat discard \\
-    hands' = \IF h? = hands~1 \THEN \langle h? \uminus \lbag Skip \rbag \rangle \cat tail~(tail~hands) \\ \t6 \ELSE tail~hands \cat \langle h? \uminus \lbag Skip \rbag \rangle \\
+    hands' = \IF h? = hands~2 \THEN \langle h? \uminus \lbag Skip \rbag \rangle \cat tail~(tail~hands) \\ \t6 \ELSE tail~hands \cat \langle h? \uminus \lbag Skip \rbag \rangle \\
     num\_players' = num\_players
 \end{schema}
 
+When a player plays a Favor, she must name another player. This second player will freely choose a card from his hand and give it to the player in turn. 
 
 \begin{schema}{Play\_Favor}
     \Delta Game \\
@@ -303,12 +325,14 @@ If the player draws a card different from an Exploding, it's simply added to her
     h? = head~hands \\
     Favor \inbag h? \\
     c? \inbag hands~target? \\
+    target? \neq 1 \\
     draw' = draw \\
     discard' = \langle Favor \rangle \cat discard \\
-    hands' = hands \oplus \{0 \mapsto h? \uminus \lbag Favor \rbag \uplus \lbag c? \rbag, target? \mapsto (hands~target?) \uminus \lbag c? \rbag\} \\
+    hands' = hands \oplus \{1 \mapsto h? \uminus \lbag Favor \rbag \uplus \lbag c? \rbag, target? \mapsto (hands~target?) \uminus \lbag c? \rbag\} \\
     num\_players' = num\_players 
 \end{schema}
 
+The Shuffle card allows the player in turn to shuffle the Draw pile. 
 
 \begin{schema}{Play\_Shuffle}
     \Delta Game \\
@@ -317,11 +341,13 @@ If the player draws a card different from an Exploding, it's simply added to her
     h? = head~hands \\
     Shuffle \inbag h? \\
     draw' \neq draw \\
-    \#draw' = \#draw \\
+    items~draw = items~draw' \\
     discard' = \langle Shuffle \rangle \cat discard \\
     hands' = \langle h? \uminus \lbag Shuffle \rbag \rangle \cat tail~hands \\
     num\_players' = num\_players
 \end{schema}
+
+If the player in turn plays a Future, she can sneakily see the three to card of the Draw pile. 
 
 \begin{schema}{Play\_Future}
     \Delta Game \\
@@ -337,6 +363,8 @@ If the player draws a card different from an Exploding, it's simply added to her
 
 \subsection{Combo cards}
 
+If you place to cards of the same kind over the discard pile, you can take a card at random from another player's hand. 
+
 \begin{schema}{Play\_TwoOfaKind}
     \Delta Game \\
     h?: Hand \\
@@ -347,11 +375,14 @@ If the player draws a card different from an Exploding, it's simply added to her
     h? = head~hands \\
     h? \bcount played? \geq 2 \\
     given? \inbag hands~target? \\
+    target? \neq 1 \\
     draw' = draw \\
     discard' = \langle played?, played? \rangle \cat discard \\
-    hands' = hands \oplus \{0 \mapsto h? \uminus \lbag played?, played? \rbag \uplus \lbag given? \rbag, \\ \t5 target? \mapsto (hands~target?) \uminus \lbag given? \rbag \} \\
+    hands' = hands \oplus \{1 \mapsto h? \uminus \lbag played?, played? \rbag \uplus \lbag given? \rbag, \\ \t5 target? \mapsto (hands~target?) \uminus \lbag given? \rbag \} \\
     num\_players' = num\_players
 \end{schema}
+
+Three of a kind is similar to two of a kind because it allows you to steal one card from someone else's hand. But here you're allowed to name the card. If the other player has it, he must hand it over. If not, the player in turn receives nothing. 
 
 \begin{schema}{Play\_ThreeOfaKind\_lucky}
     \Delta Game \\
@@ -361,11 +392,12 @@ If the player draws a card different from an Exploding, it's simply added to her
     given?: Card \\
 \where
     h? = head~hands \\
-    head~hands \bcount played? \geq 3 \\
+    h? \bcount played? \geq 3 \\
     given? \inbag hands~target? \\
+    target? \neq 1 \\
     draw' = draw \\
     discard' = \langle played?, played?, played? \rangle \cat discard \\
-    hands' = hands \oplus \{ 0 \mapsto h? \uminus \lbag played?, played?, played? \rbag \uplus \lbag given? \rbag, \\ \t6 target? \mapsto (hands~target?) \uminus \lbag given? \rbag \} \\
+    hands' = hands \oplus \{ 1 \mapsto h? \uminus \lbag played?, played?, played? \rbag \uplus \lbag given? \rbag, \\ \t6 target? \mapsto (hands~target?) \uminus \lbag given? \rbag \} \\
     num\_players' = num\_players 
 \end{schema}
 
@@ -377,25 +409,87 @@ If the player draws a card different from an Exploding, it's simply added to her
     given?: Card \\
 \where
     h? = head~hands \\
-    head~hands \bcount played? \geq 3 \\
+    h? \bcount played? \geq 3 \\
     (hands~target?) \bcount given? = 0 \\
+    target? \neq 1 \\
     draw' = draw \\
     discard' = \langle played?, played?, played? \rangle \cat discard \\
-    hands' = hands \oplus \{ 0 \mapsto h? \uminus \lbag played?, played?, played? \rbag \} \\
+    hands' = hands \oplus \{ 1 \mapsto h? \uminus \lbag played?, played?, played? \rbag \} \\
     num\_players' = num\_players
 \end{schema}
 
+\begin{zed}
+Play\_ThreeOfaKind \defs Play\_ThreeOfaKind\_lucky \lor Play\_ThreeOfaKind\_unlucky
+\end{zed}
 
+
+Five cards is also a combo play, but in this case you steal the card you want from the Discard pile. All the five cards must be different. 
 
 \begin{schema}{Play\_FiveCards}
-    \Delta Game
+    \Delta Game \\
+    h?: Hand \\
+    played?: \seq Card \\
+    taken?: \nat \\
+\where
+    h? = head~hands \\
+    \# played? = 5 \\
+    \forall c: Card | c \in \ran played? @ (items~played?) \bcount c = 1 \\ 
+    items~played? \subbageq h? \\
+    0 \leq taken? \leq \# discard \\
+    draw' = draw \\
+    discard' = squash~(\{taken?\} \ndres discard) \\ 
+    hands' = hands \oplus \{1 \mapsto h? \uminus (items~played?) \uplus \lbag discard~taken? \rbag \} \\
+
+    num\_players' = num\_players 
 \end{schema}
 
 \subsection{Playing a Nope card}
 
 \begin{schema}{Play\_Nope}
-    \Delta Game
+    \Delta Game \\
+    noper?: \nat \\
+    played: \seq Card \\
+\where
+    (hands~noper?) \bcount Nope \geq 1 \\
+    items~played \subbageq head~hands \\
+    noper? \neq 1 \\
+    draw' = draw \\
+    discard' = \langle Nope \rangle \cat played \cat discard \\
+    hands' = hands \oplus \{1 \mapsto (hands~1) \uminus items~played,\\ \t5 noper? \mapsto (hands~noper?) \uminus \lbag Nope \rbag \} \\
+    num\_players' = num\_players
 \end{schema}
+
+\begin{zed}
+    played\_Attack == \langle Attack \rangle \\
+    Play\_Attack\_Nope \defs Play\_Attack \lor Play\_Nope[played\_Attack / played]
+\end{zed}
+
+\begin{zed}
+    played\_Skip == \langle Skip \rangle \\
+    Play\_Skip\_Nope \defs Play\_Skip \lor Play\_Nope[played\_Skip / played]
+\end{zed}
+
+\begin{zed}
+    played\_Favor == \langle Favor \rangle \\
+    Play\_Favor\_Nope \defs Play\_Favor \lor Play\_Nope[played\_Favor / played]
+\end{zed}
+
+\begin{zed}
+    played\_Shuffle == \langle Shuffle \rangle \\
+    Play\_Shuffle\_Nope \defs Play\_Shuffle \lor Play\_Nope[played\_Shuffle / played]
+\end{zed}
+
+\begin{zed}
+    played\_Future == \langle Future \rangle \\
+    Play\_Future\_Nope \defs Play\_Future \lor Play\_Nope[played\_Future / played]
+\end{zed}
+
+
+\begin{zed}
+Play\_TwoOfaKind\_Nope \defs Play\_TwoOfaKind \lor Play\_Nope[played\_Two? / played] \\
+Play\_ThreeOfaKind\_Nope \defs Play\_ThreeOfaKind \lor Play\_Nope[played\_Three? / played] \\
+Play\_FiveCards\_Nope \defs Play\_FiveCards \lor Play\_Nope[played\_FiveCards?/played]
+\end{zed}
 
 
 \end{document}
