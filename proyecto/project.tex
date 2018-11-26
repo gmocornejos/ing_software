@@ -218,6 +218,11 @@ This is a formal translation of the setup procedure presented in the overview:
 
 \section{Drawing a card}
 
+\begin{figure}
+    \includegraphics[width=\textwidth]{draw_card}
+    \caption{Draw a card scenarios}
+\end{figure}
+
 Drawing a card is the commong way to end a turn. The following schemes define what happens when the players (represented by their respective hand) draw a card from the Draw Pile. 
 
 If they draw an Exploding Kitten but have a Defuse card in their hand, they can use it to avoid exploding. That is, the Defuse card in the player's hand is moved to the Discard pile and the Exploding card is inserted again into the Draw pile.
@@ -332,6 +337,12 @@ When a player plays a Favor, she must name another player. This second player wi
     num\_players' = num\_players 
 \end{schema}
 
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{favor}
+    \caption{Play\_Favor}
+\end{figure}
+
 The Shuffle card allows the player in turn to shuffle the Draw pile. 
 
 \begin{schema}{Play\_Shuffle}
@@ -418,6 +429,12 @@ Three of a kind is similar to two of a kind because it allows you to steal one c
     num\_players' = num\_players
 \end{schema}
 
+\begin{figure}
+    \includegraphics[width=\textwidth]{combo}
+    \caption{Combo cards}
+\end{figure}
+
+
 \begin{zed}
 Play\_ThreeOfaKind \defs Play\_ThreeOfaKind\_lucky \lor Play\_ThreeOfaKind\_unlucky
 \end{zed}
@@ -445,51 +462,30 @@ Five cards is also a combo play, but in this case you steal the card you want fr
 
 \subsection{Playing a Nope card}
 
+
+Because Nopes can be noped unrestrictedly (i.e. you can nope a Nope, and that nopes the previous Nope, and so on), understanding the result of a series of Nopes requires some kind of recursive analysis. This is difficult to express in Z. Therefore, I opted to show a simplified version of the rules: if someone plays a Nope card, that unavoidable \emph{nopes} the intended action. Hence, this description doesn't allow to nope a Nope.
+
+
 \begin{schema}{Play\_Nope}
     \Delta Game \\
     noper?: \nat \\
-    played: \seq Card \\
+    played?: \seq Card \\
 \where
     (hands~noper?) \bcount Nope \geq 1 \\
-    items~played \subbageq head~hands \\
+    items~played? \subbageq head~hands \\
     noper? \neq 1 \\
     draw' = draw \\
-    discard' = \langle Nope \rangle \cat played \cat discard \\
-    hands' = hands \oplus \{1 \mapsto (hands~1) \uminus items~played,\\ \t5 noper? \mapsto (hands~noper?) \uminus \lbag Nope \rbag \} \\
+    discard' = \langle Nope \rangle \cat played? \cat discard \\
+    hands' = hands \oplus \{1 \mapsto (hands~1) \uminus items~played?,\\ \t5 noper? \mapsto (hands~noper?) \uminus \lbag Nope \rbag \} \\
     num\_players' = num\_players
 \end{schema}
 
-\begin{zed}
-    played\_Attack == \langle Attack \rangle \\
-    Play\_Attack\_Nope \defs Play\_Attack \lor Play\_Nope[played\_Attack / played]
-\end{zed}
+Thence, any action can be expressed as de disjunction of two possible scenarios. An action card or combo cards is played normally or someone presents a Nope card. For example a Nope over a See the Future card:
 
 \begin{zed}
-    played\_Skip == \langle Skip \rangle \\
-    Play\_Skip\_Nope \defs Play\_Skip \lor Play\_Nope[played\_Skip / played]
+    Nope\_Future \defs Play\_Future \lor [Play\_Nope | played? = \langle Future \rangle]
 \end{zed}
 
-\begin{zed}
-    played\_Favor == \langle Favor \rangle \\
-    Play\_Favor\_Nope \defs Play\_Favor \lor Play\_Nope[played\_Favor / played]
-\end{zed}
-
-\begin{zed}
-    played\_Shuffle == \langle Shuffle \rangle \\
-    Play\_Shuffle\_Nope \defs Play\_Shuffle \lor Play\_Nope[played\_Shuffle / played]
-\end{zed}
-
-\begin{zed}
-    played\_Future == \langle Future \rangle \\
-    Play\_Future\_Nope \defs Play\_Future \lor Play\_Nope[played\_Future / played]
-\end{zed}
-
-
-\begin{zed}
-Play\_TwoOfaKind\_Nope \defs Play\_TwoOfaKind \lor Play\_Nope[played\_Two? / played] \\
-Play\_ThreeOfaKind\_Nope \defs Play\_ThreeOfaKind \lor Play\_Nope[played\_Three? / played] \\
-Play\_FiveCards\_Nope \defs Play\_FiveCards \lor Play\_Nope[played\_FiveCards?/played]
-\end{zed}
 
 
 \end{document}
